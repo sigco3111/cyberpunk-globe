@@ -17,7 +17,6 @@ An interactive cyberpunk wireframe globe rendered with Three.js, with neon-blue 
 - [🎨 기본 사용 — 5분 따라하기](#-기본-사용--5분-따라하기)
 - [🎛️ 샘플 옵션 — 색상/밀도/속도 프리셋](#️-샘플-옵션--색상밀도속도-프리셋)
 - [🧠 직접 작성 — 커스텀 효과 추가하기](#-직접-작성--커스텀-효과-추가하기)
-- [🗺️ 로드맵](#-로드맵)
 - [🎛️ Customization / 커스터마이즈](#️-customization--커스터마이즈)
 - [🧠 How it works / 동작 원리](#-how-it-works--동작-원리)
 - [🛠 Troubleshooting / 트러블슈팅](#-troubleshooting--트러블슈팅)
@@ -286,19 +285,6 @@ function spawnBeacon() {
 ```
 
 > ⚠️ JSON import는 `<script type="module">`에서 직접 가능 (Vercel 정적 호스팅 OK)
-
----
-
-## 🗺️ 로드맵
-
-- [x] v1.0 — 와이어프레임 + Beacon + Bloom (2026-06-29)
-- [ ] v1.1 — 🎵 오디오 리액티브 (Web Audio API로 Beacon height가 BPM에 반응)
-- [ ] v1.2 — 🛰️ ISS 실시간 위치 + 궤도 트레일 (무키 API: wheretheiss.at)
-- [ ] v1.3 — 🖱️ hover/click 시 도시 정보 패널 (JSON 데이터 통합)
-- [ ] v1.5 — 🎮 키보드 컨트롤 (WASD 카메라 + Space 줌 리셋)
-- [ ] v2.0 — 🌐 WebXR (VR 헤드셋 지원)
-
-기여 환영 — PR 보내주세요!
 
 ---
 
