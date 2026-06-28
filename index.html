@@ -162,7 +162,7 @@
     }
   </style>
 
-  <!-- Import map for ESM-style Three.js usage -->
+  <!-- Import map for ESM-style Three.js usage (Chrome 89+, Safari 16.4+, Firefox 108+) -->
   <script type="importmap">
   {
     "imports": {
@@ -171,8 +171,6 @@
     }
   }
   </script>
-  <!-- importmap 폴리필 (Safari < 16.4 등 구형 브라우저 fallback) -->
-  <script async src="https://unpkg.com/es-module-shims@1.10.0/dist/es-module-shims.js"></script>
 
   <!-- 글로벌 에러 핸들러 + boot 안전 제거 — 어떤 JS 에러가 나도 boot veil이 무한으로 도는 거 방지 -->
   <script>
@@ -238,38 +236,20 @@
   <div class="scanlines"></div>
 
   <script type="module">
-    // 모든 import를 dynamic + try/catch로 감싸서, 어느 모듈 하나라도 실패하면
-    // boot veil에 에러 메시지를 띄우고 무한 로딩 방지.
-    async function bootGlobe() {
-      let THREE, OrbitControls, EffectComposer, RenderPass, UnrealBloomPass, OutputPass;
-      try {
-        THREE           = await import('three');
-        OrbitControls   = (await import('three/addons/controls/OrbitControls.js')).OrbitControls;
-        EffectComposer  = (await import('three/addons/postprocessing/EffectComposer.js')).EffectComposer;
-        RenderPass      = (await import('three/addons/postprocessing/RenderPass.js')).RenderPass;
-        UnrealBloomPass = (await import('three/addons/postprocessing/UnrealBloomPass.js')).UnrealBloomPass;
-        OutputPass      = (await import('three/addons/postprocessing/OutputPass.js')).OutputPass;
-      } catch (err) {
-        if (window.__killBoot) {
-          window.__killBoot('import-failure', 'Three.js 모듈 로드 실패: ' + (err && err.message || err) + '\nCDN(unpkg.com) 접속 가능한지 확인해주세요.');
-        } else {
-          document.body.innerHTML = '<pre style="color:#ff5577;padding:20px;">모듈 로드 실패: ' + (err && err.message || err) + '</pre>';
-        }
-        return;
-      }
+    // === 1) Three.js 모듈 로드 ===
+    import * as THREE from 'three';
+    import { OrbitControls }    from 'three/addons/controls/OrbitControls.js';
+    import { EffectComposer }   from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass }       from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass }  from 'three/addons/postprocessing/UnrealBloomPass.js';
+    import { OutputPass }       from 'three/addons/postprocessing/OutputPass.js';
 
-      // 모듈 로드 성공 → THREE를 글로벌로 노출해서 기존 THREE.X 참조 그대로 사용
-      window.THREE = THREE;
-      window.__bootModules = { OrbitControls, EffectComposer, RenderPass, UnrealBloomPass, OutputPass };
-      // 기존 코드는 그대로 THREE.X를 참조하지만, 이제 THREE는 모듈 namespace
-      // 하지만 위 import * as THREE로 받은 것이 아니라 dynamic import 객체라 THREE.Scene 같은 식 접근 가능
-      // 호환을 위해 별칭도 노출
-      const { OrbitControls: OC, EffectComposer: EC, RenderPass: RP, UnrealBloomPass: UBP, OutputPass: OP } = window.__bootModules;
-      window.OrbitControls = OC;
-      window.EffectComposer = EC;
-      window.RenderPass = RP;
-      window.UnrealBloomPass = UBP;
-      window.OutputPass = OP;
+    // import 성공 → 안전망 cancel + 로그
+    if (window.__bootSafetyTimer) {
+      clearTimeout(window.__bootSafetyTimer);
+      window.__bootSafetyTimer = null;
+    }
+    console.log('[globe] Three.js modules loaded, version:', THREE.REVISION);
 
     /* ============================================================
        CONFIG  — tweak these to retheme the globe
@@ -734,6 +714,13 @@
     }
     window.__hideBoot = hideBoot;
 
+    // 캔버스 즉시 노출 — boot veil이 닫히기 전이라도 글로브가 보일 수 있도록
+    const canvas = renderer.domElement;
+    if (canvas) {
+      canvas.style.opacity = '1';
+    }
+    console.log('[globe] canvas created, size:', canvas.width, 'x', canvas.height);
+
     requestAnimationFrame(() => {
       try {
         tick();
@@ -741,16 +728,13 @@
         requestAnimationFrame(() => hideBoot());
       } catch (err) {
         console.error('[globe] tick() failed:', err);
+        if (window.__showError) window.__showError('tick() failed: ' + err.message);
         hideBoot();
       }
     });
 
     // Expose for quick console debugging
     window.__globe = { scene, camera, renderer, controls, composer, CFG, beacons };
-    }
-
-    // boot 시작 — 모듈 로드 → 위 코드 실행
-    bootGlobe();
   </script>
 </body>
 </html>
