@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>CYBERPUNK GLOBE // Three.js</title>
-  <meta name="description" content="Interactive cyberpunk wireframe globe with neon beacons and bloom — Three.js single-file demo." />
+  <title>사이버펑크 글로브 // Three.js</title>
+  <meta name="description" content="네온 빔콘과 블룸 효과가 살아있는 인터랙티브 사이버펑크 와이어프레임 지구 — Three.js 단일 파일 데모." />
 
   <link rel="preconnect" href="https://unpkg.com" crossorigin />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -189,7 +189,7 @@
         if (!b || b.classList.contains('hidden')) return;
         if (msg) showError(msg);
         b.classList.add('hidden');
-        console.warn('[boot] veil hidden by', reason);
+        console.warn('[부팅] 베일 숨김 처리:', reason);
       }
       window.__killBoot = killBoot;
       window.__showError = showError;
@@ -200,12 +200,12 @@
       // window.onerror — 어떤 에러가 발생해도 boot은 반드시 제거
       window.addEventListener('error', function (e) {
         killBoot('window.error', e.message);
-        console.error('[globe] runtime error:', e.message, e.filename, e.lineno);
+        console.error('[글로브] 런타임 에러:', e.message, e.filename, e.lineno);
       });
       window.addEventListener('unhandledrejection', function (e) {
         var msg = (e.reason && (e.reason.message || e.reason.toString())) || 'Promise rejection';
         killBoot('unhandledrejection', msg);
-        console.error('[globe] unhandled rejection:', e.reason);
+        console.error('[글로브] 처리되지 않은 Promise 거부:', e.reason);
       });
     })();
   </script>
@@ -213,24 +213,24 @@
 <body>
   <div id="boot">
     <div class="ring"></div>
-    <p>BOOTING&nbsp;·&nbsp;NEON&nbsp;GRID</p>
+    <p>부팅&nbsp;중&nbsp;·&nbsp;네온&nbsp;그리드</p>
     <pre id="boot-err" style="display:none;position:absolute;bottom:8%;left:50%;transform:translateX(-50%);max-width:80%;color:#ff5577;font-size:11px;line-height:1.5;text-align:left;white-space:pre-wrap;"></pre>
   </div>
 
   <div id="app"></div>
 
   <div class="hud hud-tl">
-    <div class="title">CYBERPUNK&nbsp;GLOBE</div>
-    <div class="sub">THREE.JS&nbsp;//&nbsp;WIREFRAME&nbsp;EARTH&nbsp;v1.0</div>
+    <div class="title">사이버펑크&nbsp;글로브</div>
+    <div class="sub">THREE.JS&nbsp;//&nbsp;와이어프레임&nbsp;지구&nbsp;v1.0</div>
   </div>
 
   <div class="hud hud-br">
-    <div>SECTOR&nbsp;<span class="accent" id="hud-sector">07</span>&nbsp;·&nbsp;LAT&nbsp;<span class="accent" id="hud-lat">00.0</span></div>
-    <div>BEACONS&nbsp;<span class="accent" id="hud-beacons">0</span>&nbsp;ACTIVE</div>
+    <div>섹터&nbsp;<span class="accent" id="hud-sector">07</span>&nbsp;·&nbsp;위도&nbsp;<span class="accent" id="hud-lat">00.0</span></div>
+    <div>빔콘&nbsp;<span class="accent" id="hud-beacons">0</span>&nbsp;작동&nbsp;중</div>
   </div>
 
   <div class="hud hud-bl">
-    <kbd>DRAG</kbd>&nbsp;ROTATE&nbsp;&nbsp;<kbd>SCROLL</kbd>&nbsp;ZOOM&nbsp;&nbsp;<kbd>SHIFT+DRAG</kbd>&nbsp;PAN
+    <kbd>드래그</kbd>&nbsp;회전&nbsp;&nbsp;<kbd>스크롤</kbd>&nbsp;줌&nbsp;&nbsp;<kbd>시프트+드래그</kbd>&nbsp;이동
   </div>
 
   <div class="scanlines"></div>
@@ -249,7 +249,7 @@
       clearTimeout(window.__bootSafetyTimer);
       window.__bootSafetyTimer = null;
     }
-    console.log('[globe] Three.js modules loaded, version:', THREE.REVISION);
+    console.log('[글로브] Three.js 모듈 로드 완료, 버전:', THREE.REVISION);
 
     /* ============================================================
        CONFIG  — tweak these to retheme the globe
@@ -276,9 +276,9 @@
       RING_LIFETIME:   1.6,               // seconds
       RING_MAX_SCALE:  0.9,               // final radius scale
 
-      BLOOM_STRENGTH:  1.45,
+      BLOOM_STRENGTH:  0.85,        // 지구 디테일이 블룸에 묻히지 않도록 감소
       BLOOM_RADIUS:    0.42,
-      BLOOM_THRESHOLD: 0.08,
+      BLOOM_THRESHOLD: 0.15,        // 너무 어두운 픽셀은 블룸 제외
 
       AUTO_ROTATE:     true,
       AUTO_ROTATE_SPEED: 0.45,
@@ -414,8 +414,8 @@
         if (t < 0.45)      m.copy(cBlue).lerp(cCyan, t / 0.45);
         else if (t < 0.7)  m.copy(cCyan).lerp(cPink, (t - 0.45) / 0.25);
         else               m.copy(cPink);
-        // latitude modulation
-        m.multiplyScalar(0.65 + 0.45 * Math.abs(Math.sin(t * Math.PI * 4)));
+        // latitude modulation — 살짝 줄여서 디테일 보호
+        m.multiplyScalar(0.45 + 0.30 * Math.abs(Math.sin(t * Math.PI * 4)));
         colors[i*3+0] = m.r;
         colors[i*3+1] = m.g;
         colors[i*3+2] = m.b;
@@ -425,7 +425,7 @@
       const mat = new THREE.LineBasicMaterial({
         vertexColors: true,
         transparent: true,
-        opacity: 0.55,
+        opacity: 0.18,        // 지구 텍스처가 비치도록 와이어프레임 투명도 낮춤
       });
       const line = new THREE.LineSegments(wire, mat);
       sphereGeo.dispose();   // wire was built from it, no longer needed
@@ -433,12 +433,36 @@
     }
     globeGroup.add(makeGlobe());
 
+    // Earth surface — real equirectangular texture (continents, oceans, atmosphere)
+    // Replaces the previous flat-blue inner core. Wireframe still overlays at GLOBE_RADIUS.
+    const textureLoader = new THREE.TextureLoader();
+    const earthTexture = textureLoader.load(
+      'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+      },
+      undefined,
+      (err) => {
+        console.warn('[글로브] 지구 텍스처 로드 실패, 단색 폴백 사용:', err);
+      }
+    );
+
+    const earthGeo = new THREE.SphereGeometry(CFG.GLOBE_RADIUS * 0.985, 64, 48);
+    const earthMat = new THREE.MeshBasicMaterial({
+      map: earthTexture,
+      color: 0xc8e0ff,         // 살짝 쿨톤 틴트 (사이버펑크 무드)
+      transparent: false,
+    });
+    const earthMesh = new THREE.Mesh(earthGeo, earthMat);
+    globeGroup.add(earthMesh);
+
     // Inner translucent core for body-of-globe glow under bloom
-    const coreGeo = new THREE.SphereGeometry(CFG.GLOBE_RADIUS * 0.985, 48, 32);
+    const coreGeo = new THREE.SphereGeometry(CFG.GLOBE_RADIUS * 0.965, 48, 32);
     const coreMat = new THREE.MeshBasicMaterial({
       color: CFG.NEON_BLUE,
       transparent: true,
-      opacity: 0.04,
+      opacity: 0.06,
       depthWrite: false,
     });
     const core = new THREE.Mesh(coreGeo, coreMat);
@@ -550,7 +574,7 @@
       haloMat.color.setHex(beacons[beacons.length-1].color);
       ringMat.color.setHex(beacons[beacons.length-1].color);
 
-      updateHud();
+      try { updateHud(); } catch (e) { /* HUD DOM not ready yet */ }
     }
 
     function killBeacon(b) {
@@ -640,9 +664,6 @@
       }
     }
 
-    // Initial population
-    for (let i = 0; i < CFG.BEACON_COUNT; i++) spawnBeacon();
-
     /* ============================================================
        RESIZE
        ============================================================ */
@@ -658,14 +679,31 @@
     window.addEventListener('resize', onResize);
 
     /* ============================================================
-       HUD updaters
+       HUD updaters — declared early with TDZ-safe guards.
+       spawnBeacon() calls updateHud() which references hudBeacons,
+       so these must be initialized BEFORE the spawn loop at L693.
+       Using `var` (hoisted, no TDZ) + explicit undefined-check guards
+       prevents "Cannot access 'hudBeacons' before initialization" if
+       the module evaluates under strict timing on Vercel's CDN.
        ============================================================ */
-    const hudBeacons = document.getElementById('hud-beacons');
-    const hudSector  = document.getElementById('hud-sector');
-    const hudLat     = document.getElementById('hud-lat');
+    var hudBeacons = document.getElementById('hud-beacons');
+    var hudSector  = document.getElementById('hud-sector');
+    var hudLat     = document.getElementById('hud-lat');
+
     function updateHud() {
-      if (hudBeacons) hudBeacons.textContent = String(beacons.length);
+      if (typeof hudBeacons === 'undefined' || !hudBeacons) return;
+      try { hudBeacons.textContent = String(beacons.length); } catch (e) { /* DOM gone */ }
     }
+
+    // Safety net: if module evaluation order ever puts this loop before
+    // the var declarations above, the typeof-guard inside updateHud() makes
+    // it a no-op rather than a hard TDZ ReferenceError crash.
+    if (typeof spawnBeacon === 'function' && CFG && typeof CFG.BEACON_COUNT === 'number') {
+      for (let i = 0; i < CFG.BEACON_COUNT; i++) {
+        try { spawnBeacon(); } catch (e) { console.warn('[globe] spawnBeacon skipped:', e.message); }
+      }
+    }
+
     setInterval(() => {
       // Show approximate camera yaw/pitch as "sector/lat"
       if (!hudSector || !hudLat) return;
@@ -719,7 +757,7 @@
     if (canvas) {
       canvas.style.opacity = '1';
     }
-    console.log('[globe] canvas created, size:', canvas.width, 'x', canvas.height);
+    console.log('[글로브] 캔버스 생성됨, 크기:', canvas.width, 'x', canvas.height);
 
     requestAnimationFrame(() => {
       try {
@@ -727,7 +765,7 @@
         // 첫 프레임 성공 후 boot veil 숨김 — 한 프레임 더 기다려서 캔버스가 화면에 그려진 다음 fade
         requestAnimationFrame(() => hideBoot());
       } catch (err) {
-        console.error('[globe] tick() failed:', err);
+        console.error('[글로브] tick() 실패:', err);
         if (window.__showError) window.__showError('tick() failed: ' + err.message);
         hideBoot();
       }
