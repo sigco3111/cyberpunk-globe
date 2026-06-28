@@ -2,7 +2,27 @@
 
 > 🌃 네오 도쿄 사이버펑크 무드의 인터랙티브 와이어프레임 지구본 — 단일 HTML 파일, 의존성은 Three.js CDN 하나.
 
+**🌐 네오 도쿄 사이버펑크 무드의 인터랙티브 3D 와이어프레임 지구본** — Three.js + UnrealBloomPass 기반. 표면의 랜덤 좌표에서 네온 블루 빛 기둥(Beacon)이 솟아오르고 파동이 퍼져나가는 블룸 효과가 살아있는 단일 HTML 파일 데모.
+
 An interactive cyberpunk wireframe globe rendered with Three.js, with neon-blue **beacons** erupting from random surface points and a **bloom**-driven glow. Everything ships as a single `index.html` — no build step.
+
+🔗 **라이브 데모**: https://cyberpunk-globe-pink.vercel.app
+
+---
+
+## 📑 목차 / Contents
+
+- [✨ Features / 기능](#-features--기능)
+- [🚀 Quick Start / 빠른 시작](#-quick-start--빠른-시작)
+- [🎨 기본 사용 — 5분 따라하기](#-기본-사용--5분-따라하기)
+- [🎛️ 샘플 옵션 — 색상/밀도/속도 프리셋](#️-샘플-옵션--색상밀도속도-프리셋)
+- [🧠 직접 작성 — 커스텀 효과 추가하기](#-직접-작성--커스텀-효과-추가하기)
+- [🗺️ 로드맵](#-로드맵)
+- [🎛️ Customization / 커스터마이즈](#️-customization--커스터마이즈)
+- [🧠 How it works / 동작 원리](#-how-it-works--동작-원리)
+- [🛠 Troubleshooting / 트러블슈팅](#-troubleshooting--트러블슈팅)
+- [📂 Files / 파일 구조](#-files--파일-구조)
+- [📜 License / 라이선스](#-license--라이선스)
 
 ---
 
@@ -53,6 +73,232 @@ Manual deploy:
 npm i -g vercel
 vercel --prod
 ```
+
+---
+
+## 🎨 기본 사용 — 5분 따라하기
+
+브라우저에서 지구본이 자동으로 회전하는 게 보이면 성공!
+
+1. **회전시켜보기** — 마우스 드래그로 지구본을 자유롭게 회전
+2. **줌 인/아웃** — 마우스 휠로 가까이/멀리
+3. **Beacon 관찰** — 지구 표면 어디서든 네온 빛 기둥이 솟아오르는 걸 기다리기 (2~4초마다 새로 등장)
+4. **시점 이동** — `Shift + 드래그`로 카메라 위치 평행이동
+5. **자동 회전 끄기** — 첫 드래그하면 자동 회전이 멈춤 (OrbitControls 기본 동작)
+
+### 🖱️ 마우스 단축키 요약
+
+| 입력 | 동작 |
+|---|---|
+| 좌클릭 드래그 | 회전 |
+| 휠 | 줌 인/아웃 |
+| Shift + 드래그 | 팬(이동) |
+| 우클릭 드래그 | 동일 (폴백) |
+
+---
+
+## 🎛️ 샘플 옵션 — 색상/밀도/속도 프리셋
+
+`index.html` 상단의 `CFG` 객체를 통째로 교체하면 분위기를 완전히 바꿀 수 있어. **클릭해서 복사 → 그대로 붙여넣기** 만 하면 됨.
+
+<details>
+<summary>🌃 <b>네오 도쿄 (기본값)</b> — 시안/마젠타 네온</summary>
+
+```js
+const CFG = {
+  BG_COLOR:         0x03030a,
+  NEON_BLUE:        0x00d4ff,
+  NEON_PINK:        0xff2bd6,
+  GLOBE_RADIUS:     1.0,
+  GLOBE_SEGMENTS:   48,
+  BEACON_COUNT:     6,
+  BEACON_LIFETIME:  [2.4, 4],
+  STAR_COUNT:       2600,
+  BLOOM_STRENGTH:   1.45,
+  BLOOM_RADIUS:     0.42,
+  BLOOM_THRESHOLD:  0.08,
+  AUTO_ROTATE:      true,
+  AUTO_ROTATE_SPEED:0.45,
+};
+```
+</details>
+
+<details>
+<summary>💚 <b>매트릭스 코드</b> — 네온 그린 + 화이트 스파크</summary>
+
+```js
+const CFG = {
+  BG_COLOR:         0x000500,
+  NEON_BLUE:        0x39ff14,   // 매트릭스 그린
+  NEON_PINK:        0xffffff,   // 흰 스파크
+  BEACON_COUNT:     10,
+  BEACON_LIFETIME:  [3, 5],
+  BLOOM_STRENGTH:   1.8,
+  BLOOM_RADIUS:     0.5,
+  STAR_COUNT:       3500,
+};
+```
+</details>
+
+<details>
+<summary>🌅 <b>블레이드 러너 2049</b> — 오렌지 + 틸</summary>
+
+```js
+const CFG = {
+  BG_COLOR:         0x0a0612,
+  NEON_BLUE:        0x00ffd1,   // 틸
+  NEON_PINK:        0xff7a1a,   // 선셋 오렌지
+  BEACON_COUNT:     5,
+  BLOOM_STRENGTH:   1.6,
+  BLOOM_RADIUS:     0.5,
+};
+```
+</details>
+
+<details>
+<summary>🛸 <b>HAL 9000</b> — 단일 빨강 액센트, 미니멀</summary>
+
+```js
+const CFG = {
+  BG_COLOR:         0x050000,
+  NEON_BLUE:        0xff1a1a,   // HAL 빨강
+  NEON_PINK:        0x550000,   // 어두운 마룬
+  BEACON_COUNT:     2,
+  BEACON_LIFETIME:  [6, 10],
+  BLOOM_STRENGTH:   2.2,
+  BLOOM_RADIUS:     0.7,
+  STAR_COUNT:       800,
+};
+```
+</details>
+
+<details>
+<summary>🌌 <b>사이버펑크 고밀도</b> — 빔콘 20개, 빠른 갱신</summary>
+
+```js
+const CFG = {
+  BG_COLOR:         0x02020a,
+  NEON_BLUE:        0x00d4ff,
+  NEON_PINK:        0xff2bd6,
+  BEACON_COUNT:     20,
+  BEACON_LIFETIME:  [1.2, 2.0],
+  BLOOM_STRENGTH:   1.2,        // 빔 많으면 bloom 약하게
+  BLOOM_RADIUS:     0.35,
+  GLOBE_SEGMENTS:   64,
+};
+// ⚠️ 성능 주의: 통합 GPU에서는 프레임 드랍 가능. STAR_COUNT도 1200 이하 권장.
+```
+</details>
+
+---
+
+## 🧠 직접 작성 — 커스텀 효과 추가하기
+
+### 패턴 1: Beacon 클릭하면 도시 이름 표시하기
+
+`index.html`의 `spawnBeacon()` 함수 안에 hover 라벨 추가:
+
+```js
+function spawnBeacon() {
+  const surface = randSurfacePoint();
+  // ... 기존 코드 ...
+
+  // 도시 데이터 (랜덤 선택)
+  const cities = ['Seoul', 'Tokyo', 'NYC', 'London', 'Sydney', 'Mars'];
+  const name = cities[Math.floor(Math.random() * cities.length)];
+
+  // HTML 라벨 추가 (Three.js Sprite보다 가벼움)
+  const label = document.createElement('div');
+  label.textContent = name;
+  label.style.cssText = `
+    position: absolute;
+    color: #00d4ff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    text-shadow: 0 0 8px #00d4ff;
+    pointer-events: none;
+  `;
+  document.body.appendChild(label);
+
+  // 매 프레임 위치 업데이트
+  const update = () => {
+    if (!beacon.mesh.parent) {
+      label.remove();
+      return;
+    }
+    const v = beacon.mesh.position.clone();
+    v.project(camera);
+    label.style.left = `${(v.x * 0.5 + 0.5) * window.innerWidth}px`;
+    label.style.top  = `${(-v.y * 0.5 + 0.5) * window.innerHeight}px`;
+    requestAnimationFrame(update);
+  };
+  update();
+
+  // ... 기존 코드 ...
+}
+```
+
+### 패턴 2: 마우스 hover 시 해당 좌표 강조
+
+```js
+window.addEventListener('mousemove', (e) => {
+  const ndc = new THREE.Vector2(
+    (e.clientX / window.innerWidth) * 2 - 1,
+    -(e.clientY / window.innerHeight) * 2 + 1
+  );
+  raycaster.setFromCamera(ndc, camera);
+  const hit = raycaster.intersectObject(globeMesh);
+  if (hit.length > 0) {
+    // hit[0].point: 표면 좌표
+    // hit[0].uv: 위경도 (-1 ~ 1)
+  }
+});
+```
+
+### 패턴 3: JSON 데이터로 Beacon 좌표 고정
+
+`data/cities.json` 추가:
+
+```json
+[
+  { "name": "Seoul",  "lat": 37.5665, "lon": 126.9780 },
+  { "name": "Tokyo",  "lat": 35.6762, "lon": 139.6503 },
+  { "name": "Berlin", "lat": 52.5200, "lon": 13.4050 }
+]
+```
+
+`spawnBeacon()` 수정:
+
+```js
+import cities from './data/cities.json';
+
+function spawnBeacon() {
+  const c = cities[Math.floor(Math.random() * cities.length)];
+  const phi   = THREE.MathUtils.degToRad(90 - c.lat);
+  const theta = THREE.MathUtils.degToRad(c.lon);
+  const surface = new THREE.Vector3(
+    CFG.GLOBE_RADIUS * Math.sin(phi) * Math.cos(theta),
+    CFG.GLOBE_RADIUS * Math.cos(phi),
+    CFG.GLOBE_RADIUS * Math.sin(phi) * Math.sin(theta)
+  );
+  // ... 나머지는 동일 ...
+}
+```
+
+> ⚠️ JSON import는 `<script type="module">`에서 직접 가능 (Vercel 정적 호스팅 OK)
+
+---
+
+## 🗺️ 로드맵
+
+- [x] v1.0 — 와이어프레임 + Beacon + Bloom (2026-06-29)
+- [ ] v1.1 — 🎵 오디오 리액티브 (Web Audio API로 Beacon height가 BPM에 반응)
+- [ ] v1.2 — 🛰️ ISS 실시간 위치 + 궤도 트레일 (무키 API: wheretheiss.at)
+- [ ] v1.3 — 🖱️ hover/click 시 도시 정보 패널 (JSON 데이터 통합)
+- [ ] v1.5 — 🎮 키보드 컨트롤 (WASD 카메라 + Space 줌 리셋)
+- [ ] v2.0 — 🌐 WebXR (VR 헤드셋 지원)
+
+기여 환영 — PR 보내주세요!
 
 ---
 
@@ -209,4 +455,22 @@ MIT — do whatever, no warranty. / 마음대로 쓰세요, 보증 없음.
 
 ## 🌐 Live demo / 라이브 데모
 
-Deployed via Vercel — see the repo's *About* panel for the latest production URL.
+- **Vercel (Production)**: https://cyberpunk-globe-pink.vercel.app
+- **GitHub Pages**: 미설정 (필요시 Settings → Pages 활성화)
+
+배포 자동화 원하면 `vercel.json` + GitHub Actions 워크플로 추가 가능 — [issue로 요청](https://github.com/sigco3111/cyberpunk-globe/issues/new).
+
+---
+
+## 🙏 Credits / 크레딧
+
+- **Three.js** — [mrdoob/three.js](https://github.com/mrdoob/three.js) (MIT)
+- **UnrealBloomPass** — Three.js examples (MIT)
+- **Share Tech Mono** — Google Fonts (OFL)
+- **아이디어**: 사용자의 "Three.js 사이버펑크 지구본" 프롬프트 (2026-06-29)
+
+---
+
+<p align="center">
+  <sub>🌃 Built with neon glow + late-night vibes · sigco3111 · MIT</sub>
+</p>
