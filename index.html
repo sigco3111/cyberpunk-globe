@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>CYBERPUNK GLOBE // Three.js</title>
+  <meta name="description" content="Interactive cyberpunk wireframe globe with neon beacons and bloom — Three.js single-file demo." />
+
+  <link rel="preconnect" href="https://unpkg.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --neon-blue: #00d4ff;
+      --neon-pink: #ff2bd6;
+      --bg-deep:   #03030a;
+      --hud-fg:    rgba(0, 212, 255, 0.85);
+      --hud-dim:   rgba(0, 212, 255, 0.45);
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-deep);
+      color: var(--hud-fg);
+      font-family: "Share Tech Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      -webkit-font-smoothing: antialiased;
+      cursor: grab;
+    }
+    body:active { cursor: grabbing; }
+
+    #app {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    canvas { display: block; }
+
+    /* ---------- HUD ---------- */
+    .hud {
+      position: fixed;
+      pointer-events: none;
+      z-index: 10;
+      user-select: none;
+      text-shadow: 0 0 6px rgba(0, 212, 255, 0.6);
+    }
+    .hud-tl {
+      top: 18px; left: 20px;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      line-height: 1.55;
+    }
+    .hud-tl .title {
+      color: var(--hud-fg);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.32em;
+    }
+    .hud-tl .sub {
+      color: var(--hud-dim);
+      font-size: 10px;
+      letter-spacing: 0.28em;
+      margin-top: 2px;
+    }
+    .hud-br {
+      right: 20px; bottom: 18px;
+      font-size: 10px;
+      letter-spacing: 0.24em;
+      color: var(--hud-dim);
+      text-align: right;
+      line-height: 1.6;
+    }
+    .hud-br .accent { color: var(--neon-pink); }
+    .hud-bl {
+      left: 20px; bottom: 18px;
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      color: var(--hud-dim);
+      line-height: 1.6;
+    }
+    .hud-bl kbd {
+      display: inline-block;
+      padding: 1px 6px;
+      border: 1px solid rgba(0, 212, 255, 0.35);
+      border-radius: 3px;
+      color: var(--hud-fg);
+      background: rgba(0, 212, 255, 0.06);
+      font-family: inherit;
+      font-size: 10px;
+    }
+
+    /* ---------- Loading veil ---------- */
+    #boot {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(ellipse at center, #0a0a18 0%, #03030a 70%);
+      z-index: 100;
+      transition: opacity 600ms ease;
+    }
+    #boot .ring {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      border-top-color: var(--neon-blue);
+      animation: spin 1.1s linear infinite;
+      box-shadow: 0 0 18px rgba(0, 212, 255, 0.35);
+    }
+    #boot p {
+      position: absolute;
+      bottom: 28%;
+      font-size: 11px;
+      letter-spacing: 0.4em;
+      color: var(--hud-dim);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #boot.hidden { opacity: 0; pointer-events: none; }
+
+    /* ---------- Scanlines overlay (subtle) ---------- */
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 212, 255, 0.025) 0px,
+        rgba(0, 212, 255, 0.025) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+      mix-blend-mode: screen;
+    }
+
+    /* ---------- Mobile tweaks ---------- */
+    @media (max-width: 640px) {
+      .hud-tl .title { font-size: 12px; letter-spacing: 0.24em; }
+      .hud-tl, .hud-br, .hud-bl { font-size: 9px; }
+    }
+  </style>
+
+  <!-- Import map for ESM-style Three.js usage -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="boot">
+    <div class="ring"></div>
+    <p>BOOTING&nbsp;·&nbsp;NEON&nbsp;GRID</p>
+  </div>
+
+  <div id="app"></div>
+
+  <div class="hud hud-tl">
+    <div class="title">CYBERPUNK&nbsp;GLOBE</div>
+    <div class="sub">THREE.JS&nbsp;//&nbsp;WIREFRAME&nbsp;EARTH&nbsp;v1.0</div>
+  </div>
+
+  <div class="hud hud-br">
+    <div>SECTOR&nbsp;<span class="accent" id="hud-sector">07</span>&nbsp;·&nbsp;LAT&nbsp;<span class="accent" id="hud-lat">00.0</span></div>
+    <div>BEACONS&nbsp;<span class="accent" id="hud-beacons">0</span>&nbsp;ACTIVE</div>
+  </div>
+
+  <div class="hud hud-bl">
+    <kbd>DRAG</kbd>&nbsp;ROTATE&nbsp;&nbsp;<kbd>SCROLL</kbd>&nbsp;ZOOM&nbsp;&nbsp;<kbd>SHIFT+DRAG</kbd>&nbsp;PAN
+  </div>
+
+  <div class="scanlines"></div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls }    from 'three/addons/controls/OrbitControls.js';
+    import { EffectComposer }   from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass }       from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass }  from 'three/addons/postprocessing/UnrealBloomPass.js';
+    import { OutputPass }       from 'three/addons/postprocessing/OutputPass.js';
+
+    /* ============================================================
+       CONFIG  — tweak these to retheme the globe
+       ============================================================ */
+    const CFG = {
+      BG_COLOR:        0x03030a,          // deep cosmic background
+      FOG_COLOR:       0x03030a,          // matches background
+      NEON_BLUE:       0x00d4ff,          // primary accent
+      NEON_PINK:       0xff2bd6,          // secondary accent
+      NEON_CYAN:       0x18ffff,          // star color hint
+
+      GLOBE_RADIUS:    1.0,
+      GLOBE_SEGMENTS:  48,                // sphere subdivision
+
+      BEACON_COUNT:    6,                 // active beacons at any time
+      BEACON_MIN:      5,
+      BEACON_MAX:      8,
+      BEACON_LIFETIME: [2.4, 4.0],        // seconds (min, max)
+      BEACON_SPAWN_EVERY: 0.8,            // seconds between spawn checks
+
+      STAR_COUNT:      2600,
+      STAR_FIELD_R:    22,                // radius of star sphere
+
+      RING_LIFETIME:   1.6,               // seconds
+      RING_MAX_SCALE:  0.9,               // final radius scale
+
+      BLOOM_STRENGTH:  1.45,
+      BLOOM_RADIUS:    0.42,
+      BLOOM_THRESHOLD: 0.08,
+
+      AUTO_ROTATE:     true,
+      AUTO_ROTATE_SPEED: 0.45,
+    };
+
+    /* ============================================================
+       SCENE / RENDERER / CAMERA
+       ============================================================ */
+    const app = document.getElementById('app');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(CFG.BG_COLOR);
+    scene.fog    = new THREE.Fog(CFG.FOG_COLOR, 6, 28);
+
+    const camera = new THREE.PerspectiveCamera(
+      55,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      200
+    );
+    camera.position.set(0, 0.6, 3.6);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    app.appendChild(renderer.domElement);
+
+    /* ============================================================
+       CONTROLS  — orbit, zoom, pan, auto-rotate
+       ============================================================ */
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping  = true;
+    controls.dampingFactor  = 0.06;
+    controls.rotateSpeed    = 0.55;
+    controls.zoomSpeed      = 0.9;
+    controls.panSpeed       = 0.6;
+    controls.minDistance    = 1.6;
+    controls.maxDistance    = 9.0;
+    controls.enablePan      = true;
+    controls.autoRotate     = CFG.AUTO_ROTATE;
+    controls.autoRotateSpeed= CFG.AUTO_ROTATE_SPEED;
+    controls.target.set(0, 0, 0);
+
+    /* ============================================================
+       LIGHTING  — soft ambient is enough; emissive materials do the work
+       ============================================================ */
+    scene.add(new THREE.AmbientLight(0x223044, 0.6));
+    const keyLight = new THREE.PointLight(CFG.NEON_BLUE, 1.4, 12, 1.5);
+    keyLight.position.set(3, 2, 4);
+    scene.add(keyLight);
+    const rimLight = new THREE.PointLight(CFG.NEON_PINK, 0.9, 12, 1.5);
+    rimLight.position.set(-3, -1.5, -2);
+    scene.add(rimLight);
+
+    /* ============================================================
+       STAR FIELD
+       ============================================================ */
+    function makeStarField() {
+      const positions = new Float32Array(CFG.STAR_COUNT * 3);
+      const colors    = new Float32Array(CFG.STAR_COUNT * 3);
+      const cBlue = new THREE.Color(CFG.NEON_BLUE);
+      const cCyan = new THREE.Color(CFG.NEON_CYAN);
+      const cPink = new THREE.Color(CFG.NEON_PINK);
+      const cWhite= new THREE.Color(0xffffff);
+
+      for (let i = 0; i < CFG.STAR_COUNT; i++) {
+        // uniform on sphere
+        const u = Math.random();
+        const v = Math.random();
+        const theta = 2 * Math.PI * u;
+        const phi   = Math.acos(2 * v - 1);
+        const r = CFG.STAR_FIELD_R * (0.85 + Math.random() * 0.3);
+        positions[i*3+0] = r * Math.sin(phi) * Math.cos(theta);
+        positions[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+        positions[i*3+2] = r * Math.cos(phi);
+
+        // color: mostly white/blue with a few pink sparks
+        const roll = Math.random();
+        let c;
+        if      (roll < 0.62) c = cWhite;
+        else if (roll < 0.85) c = cBlue;
+        else if (roll < 0.96) c = cCyan;
+        else                  c = cPink;
+        colors[i*3+0] = c.r;
+        colors[i*3+1] = c.g;
+        colors[i*3+2] = c.b;
+      }
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geo.setAttribute('color',    new THREE.BufferAttribute(colors,    3));
+
+      const mat = new THREE.PointsMaterial({
+        size: 0.045,
+        sizeAttenuation: true,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.92,
+        depthWrite: false,
+      });
+
+      return new THREE.Points(geo, mat);
+    }
+    const stars = makeStarField();
+    scene.add(stars);
+
+    /* ============================================================
+       WIREFRAME GLOBE
+       ============================================================ */
+    const globeGroup = new THREE.Group();
+    scene.add(globeGroup);
+
+    function makeGlobe() {
+      const sphereGeo = new THREE.SphereGeometry(
+        CFG.GLOBE_RADIUS,
+        CFG.GLOBE_SEGMENTS,
+        Math.max(24, Math.floor(CFG.GLOBE_SEGMENTS * 0.6))
+      );
+      const wire = new THREE.WireframeGeometry(sphereGeo);
+
+      // We use vertex colors so we can mix cyan and pink along the wireframe
+      const colors = new Float32Array(wire.attributes.position.count * 3);
+      const cBlue = new THREE.Color(CFG.NEON_BLUE);
+      const cPink = new THREE.Color(CFG.NEON_PINK);
+      const cCyan = new THREE.Color(CFG.NEON_CYAN);
+
+      for (let i = 0; i < wire.attributes.position.count; i++) {
+        const y = wire.attributes.position.getY(i);
+        const t = (y + CFG.GLOBE_RADIUS) / (2 * CFG.GLOBE_RADIUS);   // 0..1
+        const m = new THREE.Color();
+        if (t < 0.45)      m.copy(cBlue).lerp(cCyan, t / 0.45);
+        else if (t < 0.7)  m.copy(cCyan).lerp(cPink, (t - 0.45) / 0.25);
+        else               m.copy(cPink);
+        // latitude modulation
+        m.multiplyScalar(0.65 + 0.45 * Math.abs(Math.sin(t * Math.PI * 4)));
+        colors[i*3+0] = m.r;
+        colors[i*3+1] = m.g;
+        colors[i*3+2] = m.b;
+      }
+      wire.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+      const mat = new THREE.LineBasicMaterial({
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.55,
+      });
+      const line = new THREE.LineSegments(wire, mat);
+      sphereGeo.dispose();   // wire was built from it, no longer needed
+      return line;
+    }
+    globeGroup.add(makeGlobe());
+
+    // Inner translucent core for body-of-globe glow under bloom
+    const coreGeo = new THREE.SphereGeometry(CFG.GLOBE_RADIUS * 0.985, 48, 32);
+    const coreMat = new THREE.MeshBasicMaterial({
+      color: CFG.NEON_BLUE,
+      transparent: true,
+      opacity: 0.04,
+      depthWrite: false,
+    });
+    const core = new THREE.Mesh(coreGeo, coreMat);
+    globeGroup.add(core);
+
+    // Equator + meridian accent rings
+    function makeAccentRing(radius, color, axis='y') {
+      const g = new THREE.RingGeometry(radius, radius + 0.002, 128);
+      const m = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
+      const r = new THREE.Mesh(g, m);
+      if (axis === 'x') r.rotation.x = Math.PI / 2;
+      return r;
+    }
+    globeGroup.add(makeAccentRing(CFG.GLOBE_RADIUS * 1.002, CFG.NEON_PINK, 'x'));
+    globeGroup.add(makeAccentRing(CFG.GLOBE_RADIUS * 1.002, CFG.NEON_BLUE, 'y'));
+
+    /* ============================================================
+       BEACONS  (light pillars that shoot up from the surface)
+       ============================================================ */
+    const beacons = [];   // active beacons
+
+    // Cylinder geometry is shared; we scale per-beacon in update.
+    const beaconGeo = new THREE.CylinderGeometry(0.006, 0.018, 1.0, 8, 1, true);
+    // Shift so the bottom is at y=0 (we then position the mesh at the surface point).
+    beaconGeo.translate(0, 0.5, 0);
+
+    // Glow halo: small disc that sits at the base of the beacon
+    const haloGeo = new THREE.CircleGeometry(0.045, 24);
+
+    function randSurfacePoint() {
+      // Uniform point on unit sphere, then scaled to globe radius
+      const u = Math.random();
+      const v = Math.random();
+      const theta = 2 * Math.PI * u;
+      const phi   = Math.acos(2 * v - 1);
+      return new THREE.Vector3(
+        CFG.GLOBE_RADIUS * Math.sin(phi) * Math.cos(theta),
+        CFG.GLOBE_RADIUS * Math.sin(phi) * Math.sin(theta),
+        CFG.GLOBE_RADIUS * Math.cos(phi)
+      );
+    }
+
+    function spawnBeacon() {
+      const surface = randSurfacePoint();
+      const up      = surface.clone().normalize();
+
+      // Beacon pillar
+      const height = 0.18 + Math.random() * 0.32;     // 0.18 .. 0.50
+      const mat = new THREE.MeshBasicMaterial({
+        color: CFG.NEON_BLUE,
+        transparent: true,
+        opacity: 0.0,                                // faded in
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      });
+      const pillar = new THREE.Mesh(beaconGeo, mat);
+      pillar.scale.set(1, height, 1);
+      pillar.position.copy(surface);
+      // Orient cylinder so +Y points along surface normal
+      const q = new THREE.Quaternion();
+      q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), up);
+      pillar.quaternion.copy(q);
+      globeGroup.add(pillar);
+
+      // Glowing halo at the base
+      const haloMat = new THREE.MeshBasicMaterial({
+        color: CFG.NEON_BLUE,
+        transparent: true,
+        opacity: 0.0,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      });
+      const halo = new THREE.Mesh(haloGeo, haloMat);
+      halo.position.copy(surface);
+      // Face the halo outward (along surface normal)
+      halo.lookAt(surface.clone().multiplyScalar(2));
+      globeGroup.add(halo);
+
+      // Ring wave that expands from the base
+      const ringGeo = new THREE.RingGeometry(0.01, 0.022, 48);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: CFG.NEON_BLUE,
+        transparent: true,
+        opacity: 0.0,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.position.copy(surface);
+      ring.lookAt(surface.clone().multiplyScalar(2));
+      globeGroup.add(ring);
+
+      const lifetime = CFG.BEACON_LIFETIME[0] +
+        Math.random() * (CFG.BEACON_LIFETIME[1] - CFG.BEACON_LIFETIME[0]);
+
+      beacons.push({
+        pillar, halo, ring,
+        pillarMat: mat, haloMat, ringMat,
+        surface, up,
+        height,
+        age: 0,
+        lifetime,
+        // Slight color shift: 85% blue, 15% pink for visual variety
+        color: Math.random() < 0.85 ? CFG.NEON_BLUE : CFG.NEON_PINK,
+      });
+      // apply color
+      mat.color.setHex(beacons[beacons.length-1].color);
+      haloMat.color.setHex(beacons[beacons.length-1].color);
+      ringMat.color.setHex(beacons[beacons.length-1].color);
+
+      updateHud();
+    }
+
+    function killBeacon(b) {
+      globeGroup.remove(b.pillar);
+      globeGroup.remove(b.halo);
+      globeGroup.remove(b.ring);
+      b.pillarMat.dispose();
+      b.haloMat.dispose();
+      b.ringMat.dispose();
+    }
+
+    function updateBeacons(dt) {
+      for (let i = beacons.length - 1; i >= 0; i--) {
+        const b = beacons[i];
+        b.age += dt;
+        const t = b.age / b.lifetime;                 // 0..1
+        if (t >= 1) {
+          killBeacon(b);
+          beacons.splice(i, 1);
+          updateHud();
+          continue;
+        }
+
+        // Eased rise: smooth grow-in then steady, ease-out at end
+        const growIn  = Math.min(1, b.age / 0.35);    // first 0.35s
+        const fadeOut = 1 - Math.max(0, (t - 0.7) / 0.3);
+        const a = growIn * Math.max(0, fadeOut);
+
+        // pillar
+        b.pillarMat.opacity = 0.95 * a;
+        b.pillar.scale.y = b.height * (0.2 + 0.8 * a);
+
+        // halo
+        b.haloMat.opacity = 0.85 * a;
+        const haloPulse = 1 + 0.4 * Math.sin(b.age * 8);
+        b.halo.scale.setScalar(haloPulse);
+
+        // ring wave
+        const rt = Math.min(1, b.age / CFG.RING_LIFETIME);
+        const ringScale = 0.4 + CFG.RING_MAX_SCALE * rt;
+        b.ring.scale.setScalar(ringScale);
+        b.ringMat.opacity = 0.9 * (1 - rt) * a;
+      }
+    }
+
+    /* ============================================================
+       POST-PROCESSING  — Bloom
+       ============================================================ */
+    const composer = new EffectComposer(renderer);
+    composer.setSize(window.innerWidth, window.innerHeight);
+    composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const renderPass = new RenderPass(scene, camera);
+    composer.addPass(renderPass);
+
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      CFG.BLOOM_STRENGTH,
+      CFG.BLOOM_RADIUS,
+      CFG.BLOOM_THRESHOLD
+    );
+    composer.addPass(bloomPass);
+
+    const outputPass = new OutputPass();
+    composer.addPass(outputPass);
+
+    /* ============================================================
+       SPAWN SCHEDULER
+       ============================================================ */
+    let spawnTimer = 0;
+    function maybeSpawn(dt) {
+      spawnTimer += dt;
+      if (spawnTimer < CFG.BEACON_SPAWN_EVERY) return;
+      spawnTimer = 0;
+      const target = Math.round(
+        CFG.BEACON_MIN + Math.random() * (CFG.BEACON_MAX - CFG.BEACON_MIN)
+      );
+      while (beacons.length < Math.min(target, CFG.BEACON_COUNT + 1)) {
+        spawnBeacon();
+      }
+      // Occasionally replace one beacon
+      if (beacons.length >= CFG.BEACON_COUNT && Math.random() < 0.5) {
+        const idx = Math.floor(Math.random() * beacons.length);
+        killBeacon(beacons[idx]);
+        beacons.splice(idx, 1);
+        spawnBeacon();
+      }
+    }
+
+    // Initial population
+    for (let i = 0; i < CFG.BEACON_COUNT; i++) spawnBeacon();
+
+    /* ============================================================
+       RESIZE
+       ============================================================ */
+    function onResize() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+      composer.setSize(w, h);
+      bloomPass.setSize(w, h);
+    }
+    window.addEventListener('resize', onResize);
+
+    /* ============================================================
+       HUD updaters
+       ============================================================ */
+    const hudBeacons = document.getElementById('hud-beacons');
+    const hudSector  = document.getElementById('hud-sector');
+    const hudLat     = document.getElementById('hud-lat');
+    function updateHud() {
+      if (hudBeacons) hudBeacons.textContent = String(beacons.length);
+    }
+    setInterval(() => {
+      // Show approximate camera yaw/pitch as "sector/lat"
+      if (!hudSector || !hudLat) return;
+      const az = Math.round(((Math.atan2(camera.position.x, camera.position.z) * 180 / Math.PI) + 360) % 360 / 10);
+      const lat = Math.round(Math.asin(camera.position.y / camera.position.length()) * 180 / Math.PI * 10) / 10;
+      hudSector.textContent = String(az).padStart(2, '0');
+      hudLat.textContent    = (lat >= 0 ? '+' : '') + lat.toFixed(1);
+    }, 250);
+
+    /* ============================================================
+       ANIMATION LOOP
+       ============================================================ */
+    const clock = new THREE.Clock();
+    let frame = 0;
+    function tick() {
+      const dt = Math.min(clock.getDelta(), 0.05);
+      frame++;
+
+      // gentle starfield twinkle
+      stars.rotation.y += dt * 0.012;
+      stars.rotation.x += dt * 0.004;
+
+      // subtle globe breathing
+      globeGroup.rotation.y += dt * 0.02;   // extra micro rotation (autoRotate handles user-facing spin)
+      core.scale.setScalar(1 + 0.012 * Math.sin(frame * 0.02));
+
+      maybeSpawn(dt);
+      updateBeacons(dt);
+
+      controls.update();
+      composer.render();
+      requestAnimationFrame(tick);
+    }
+
+    // Kick off after first paint
+    requestAnimationFrame(() => {
+      tick();
+      // Hide boot veil
+      requestAnimationFrame(() => {
+        const b = document.getElementById('boot');
+        if (b) {
+          b.classList.add('hidden');
+          setTimeout(() => b.remove(), 700);
+        }
+      });
+    });
+
+    // Expose for quick console debugging
+    window.__globe = { scene, camera, renderer, controls, composer, CFG, beacons };
+  </script>
+</body>
+</html>
