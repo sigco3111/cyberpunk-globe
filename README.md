@@ -455,6 +455,7 @@ MIT — do whatever, no warranty. / 마음대로 쓰세요, 보증 없음.
 - **Share Tech Mono** — Google Fonts (OFL)
 - **AI 생성**: [MiniMax-M3](https://www.minimax.io/) (via [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) on [OpenCode](https://opencode.ai/))
 - **아이디어**: 사용자의 "Three.js 사이버펑크 지구본" 프롬프트 (2026-06-29)
+- **코딩미션 참조 페이지**: [cokac.com — 코드깎는노인](https://cokac.com/list/announcement/24)
 
 ---
 
