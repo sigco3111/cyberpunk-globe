@@ -6,7 +6,7 @@
 
 An interactive cyberpunk wireframe globe rendered with Three.js, with neon-blue **beacons** erupting from random surface points and a **bloom**-driven glow. Everything ships as a single `index.html` — no build step.
 
-🔗 **라이브 데모**: https://cyberpunk-globe-pink.vercel.app
+🔗 **라이브 데모**: https://sigco3111.github.io/cyberpunk-globe/
 
 ---
 
@@ -284,7 +284,7 @@ function spawnBeacon() {
 }
 ```
 
-> ⚠️ JSON import는 `<script type="module">`에서 직접 가능 (Vercel 정적 호스팅 OK)
+> ⚠️ JSON import는 `<script type="module">`에서 직접 가능 (정적 호스팅 OK — Vercel 또는 GitHub Pages)
 
 ---
 
@@ -426,7 +426,7 @@ Add `controls.enablePan = false` and `controls.minDistance = controls.maxDistanc
 ```
 cyberpunk-globe/
 ├── index.html      # The entire app (CSS + ES module inlined)
-├── vercel.json     # Static-hosting manifest for Vercel
+├── vercel.json     # Static-hosting manifest (Vercel 사용 이력 — 현재는 GitHub Pages로 전환 2026-08)
 ├── LICENSE         # MIT
 └── README.md       # You are here
 ```
@@ -441,10 +441,10 @@ MIT — do whatever, no warranty. / 마음대로 쓰세요, 보증 없음.
 
 ## 🌐 Live demo / 라이브 데모
 
-- **Vercel (Production)**: https://cyberpunk-globe-pink.vercel.app
-- **GitHub Pages**: 미설정 (필요시 Settings → Pages 활성화)
+- **GitHub Pages (현재 Production)**: https://sigco3111.github.io/cyberpunk-globe/
+- ~~**Vercel (Production, 이전 배포)**: https://cyberpunk-globe-pink.vercel.app~~ — Vercel 계정 이전 후 404 (전환 2026-08)
 
-배포 자동화 원하면 `vercel.json` + GitHub Actions 워크플로 추가 가능 — [issue로 요청](https://github.com/sigco3111/cyberpunk-globe/issues/new).
+Settings → Pages 활성화됨 (현재 권장 배포 채널). Vercel로 다시 배포하려면 `vercel.json` 그대로 사용 가능.
 
 ---
 
@@ -470,7 +470,7 @@ MIT — do whatever, no warranty. / 마음대로 쓰세요, 보증 없음.
 | 사용자 아이디어 프롬프트 | Telegram (chat with [Hermes Agent](https://github.com/sigco3111/cyberpunk-globe)) |
 | 코드 생성 | **OpenCode** CLI + **oh-my-openagent** 플러그인 |
 | LLM | **[MiniMax-M3](https://www.minimax.io/)** (소속사: minimax) |
-| GitHub 푸시 + Vercel 배포 | 자동 (GitHub webhook + Vercel 자동 빌드) |
+| GitHub 푸시 + 정적 호스팅 (Vercel 초기 → GitHub Pages 전환 2026-08) | 자동 (GitHub webhook + 호스팅 자동 빌드) |
 
 ### 📝 사용자 프롬프트 (원문)
 
@@ -482,7 +482,7 @@ MIT — do whatever, no warranty. / 마음대로 쓰세요, 보증 없음.
 
 1. **아이디어 입력** — Telegram에서 "Three.js 사이버펑크 지구본 만들어줘" 한 줄 프롬프트
 2. **브레인스토밍** — 디자인 결정 4가지 (컨셉/데이터/인터랙션/배포) A/B/C 옵션 제시
-3. **OpenCode 위임** — `delegate_task`로 풀 자동 워크플로 (구현 → push → Vercel 배포)
+3. **OpenCode 위임** — `delegate_task`로 풀 자동 워크플로 (구현 → push → 초기 Vercel 배포)
 4. **Live URL 검증** — `curl -sI`로 HTTP 200 확인 후 사용자에게 보고
 5. **README 보강** — 한/영 병기 다층 옵션 + 생성 이력 명시
 
@@ -491,7 +491,7 @@ MIT — do whatever, no warranty. / 마음대로 쓰세요, 보증 없음.
 - **OpenCode 풀 자동 위임** 시 결정사항 4개를 A/B/C 옵션 + 추천으로 미리 정리해서 넘기는 게 핵심
 - **importmap + ESM 패턴**이 2026년 Three.js 단일 HTML에서 가장 안정적 (Chrome 89+, Safari 16.4+, Firefox 108+)
 - **UnrealBloomPass는 색이 진해야 bloom이 보임** — threshold 낮게(0.1), strength 1.5 정도
-- **Vercel 단일 HTML 배포** 시 `vercel.json`의 `outputDirectory: "."` 명시 필수 (Vite 같은 빌드 도구가 없으면 Vercel이 빈 dist를 찾으려 함)
+- **단일 HTML 정적 호스팅** 시 `outputDirectory: "."` 명시 필수 (Vite 같은 빌드 도구가 없으면 호스팅 플랫폼이 빈 dist를 찾으려 함) — Vercel / GitHub Pages 모두 동일
 
 ---
 
